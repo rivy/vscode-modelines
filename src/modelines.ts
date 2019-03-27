@@ -61,7 +61,7 @@ export class ModelineSearcher {
 	}
 
 	private getVSCodeModelineOptions(searchLines:string[]): any {
-		let codeModelineRegex = /^.{0,8}code:(.*)/;
+		let codeModelineRegex = /.{0,8}code:(.*)/;
 		let codeModelineOptsRegex = /(\w+)=([^\s]+)/g;
 
 		let parseOption = (name:string, value:string):any => {
@@ -92,7 +92,7 @@ export class ModelineSearcher {
 	}
 
 	private getVimModelineOptions(searchLines:string[]): any {
-		let codeModelineRegex = /^.{0,8}vim:(.*)/;
+		let codeModelineRegex = /.{0,8}vim:(.*)/;
 		let codeModelineOptsRegex = /(\w+)=([^:\s]+)|(\w+)/g;
 
 		let parseOption = (name:string, value:string):any => {
@@ -127,7 +127,7 @@ export class ModelineSearcher {
 	}
 
 	private getEmacsModelineOptions(searchLines:string[]): any {
-		let emacsModelineRegex = /^.{0,8}-\*-\s*(.*)-\*-/;
+		let emacsModelineRegex = /.{0,8}-\*-\s*(.*)-\*-/;
 		let emacsModelineOptRegex = /([\w-]+):\s*([^;\s]*)|^(\w+)\s*$/g;
 
 		let parseOption = (name:string, value:string):any => {
