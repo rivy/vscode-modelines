@@ -163,6 +163,7 @@ export class ModelineSearcher {
 	}
 
 	private getLinesToSearch(): string[] {
+        // ToDO: change to use .lineCount() and .lineAt() to gather lines, reducing work; check timing differences by doing both and logging the times
 		let lines = this.document.getText().split(/\n/g);
 		let checkNumLines = NUM_LINES_TO_SEARCH;
 		// avoid checking same line multiple times if file doesn't have enough lines
