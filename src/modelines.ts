@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import extend = require('extend');
+// import { performance } from 'perf_hooks';
 
 // look at this number of lines at the top/bottom of the file
 const NUM_LINES_TO_SEARCH = 5;
@@ -11,7 +12,7 @@ export function activate(context: vscode.ExtensionContext) {
 		applyModelines(vscode.window.activeTextEditor);
 	}));
 
-	// Listen for new documents being openend
+	// Listen for new documents being opened
 	context.subscriptions.push(vscode.workspace.onDidOpenTextDocument(doc => {
 		// apparently the window.visibleTextEditors array is not up to date at this point,
 		// so we have to work around that by waiting a bit.
@@ -53,7 +54,8 @@ export class ModelineSearcher {
 	}
 
 	public getModelineOptions(): any {
-		let searchLines = this.getLinesToSearch();
+        // let searchLines = this.getLinesToSearch();
+        let searchLines = this.getLinesToSearch_byLine();
 		return extend({},
 			this.getVimModelineOptions(searchLines),
 			this.getEmacsModelineOptions(searchLines),
@@ -143,8 +145,12 @@ export class ModelineSearcher {
 				case 'tab-width':
 					return { tabSize: parsedVal };
 				case 'mode':
-					return { language: parsedVal };
-				default:
+                    return { language: parsedVal };
+                case 'st-word_wrap':
+                case 'vc-word-wrap':
+                case 'vs-word-wrap':
+                    return { wordWrap: parsedVal };
+                default:
 					return {};
 			}
 		};
@@ -162,16 +168,38 @@ export class ModelineSearcher {
 		return options;
 	}
 
-	private getLinesToSearch(): string[] {
-        // ToDO: change to use .lineCount() and .lineAt() to gather lines, reducing work; check timing differences by doing both and logging the times
-		let lines = this.document.getText().split(/\n/g);
-		let checkNumLines = NUM_LINES_TO_SEARCH;
-		// avoid checking same line multiple times if file doesn't have enough lines
-		if (lines.length < NUM_LINES_TO_SEARCH*2)
-			checkNumLines = lines.length / 2;
-		let topLines = lines.slice(0, checkNumLines),
-			bottomLines = lines.slice(-checkNumLines);
-		return topLines.concat(bottomLines).filter(line => line.length <= MAX_LINE_LENGTH);
+	// private getLinesToSearch(): string[] {
+    //     // ToDO: change to use .lineCount() and .lineAt() to gather lines, reducing work; check timing differences by doing both and logging the times
+    //     let t0 = performance.now();
+	// 	let lines = this.document.getText().split(/\n/g);
+	// 	let checkNumLines = NUM_LINES_TO_SEARCH;
+	// 	// avoid checking same line multiple times if file doesn't have enough lines
+	// 	if (lines.length < NUM_LINES_TO_SEARCH*2)
+	// 		checkNumLines = lines.length / 2;
+	// 	let topLines = lines.slice(0, checkNumLines),
+	// 		bottomLines = lines.slice(-checkNumLines);
+    //     let retval = topLines.concat(bottomLines).filter(line => line.length <= MAX_LINE_LENGTH);
+    //     let t1 = performance.now();
+    //     console.log("getLinesToSearch duration = "+( t1 - t0)+" ms");
+    //     return retval;
+	// }
+
+	private getLinesToSearch_byLine(): string[] {
+        // reduces work; relatively constant time, even as files get larger (~50us)
+        // let t0 = performance.now();
+        let lineCount = this.document.lineCount;
+        let lines:string[] = [];
+        let lineList:number[] = [];
+        if ( lineCount < 1 ) { return lines; }
+        if ( lineCount < (NUM_LINES_TO_SEARCH * 2)) {
+            lineList = [ ...Array(lineCount-1).keys() ];
+        } else {
+            lineList = [ ...Array(5).keys() ].concat([ ...Array(5).keys() ].map( n => (n + lineCount - NUM_LINES_TO_SEARCH - 1)))
+        }
+        lines = lineList.map( n => this.document.lineAt(n).text ).filter(line => line.length <= MAX_LINE_LENGTH);
+        // let t1 = performance.now();
+        // console.log("getLinesToSearch_byLine duration = "+( t1 - t0 )+" ms");
+        return lines;
 	}
 
 	private _parseGenericValue(value:string): any {
